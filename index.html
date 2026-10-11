@@ -471,6 +471,54 @@ h2 {
 .ntag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac-ink); }
 .ntag.beli { background: var(--amber-bg); color: var(--amber-ink); }
 
+/* ============ eksport nota (kertas nota comel + cetak PDF) ============ */
+.nota-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+.nota-tools .nota-filter { margin: 0; flex: 1; min-width: 0; }
+#exportSheet {
+  position: fixed; inset: 0; z-index: 900; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: rgba(8,28,60,.78);
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 14px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+#exportSheet[hidden] { display: none; }
+.xp-wrap { max-width: 440px; margin: 0 auto; }
+.xp-controls { padding: 14px; margin-bottom: 14px; }
+.xp-check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; padding: 9px 0; cursor: pointer; }
+.xp-check input { width: 18px; height: 18px; }
+.xp-paper {
+  position: relative; color: #2B2A33; background: #FFF8D6;
+  border-radius: 8px 8px 22px 8px; padding: 30px 20px 22px;
+  box-shadow: 0 18px 38px -14px rgba(0,0,0,.6);
+  background-image: radial-gradient(circle at 1px 1px, rgba(11,79,160,.10) 1px, transparent 1.2px);
+  background-size: 14px 14px;
+}
+.xp-paper::before {
+  content: ''; position: absolute; top: -11px; left: 50%; width: 92px; height: 24px; margin-left: -46px;
+  background: rgba(255,170,190,.78); transform: rotate(-3deg); border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.18);
+}
+.xp-title { font-family: var(--f-tulis); font-size: 36px; line-height: 1; font-weight: 700; color: #0B4FA0; text-align: center; margin: 4px 0 2px; }
+.xp-sub { text-align: center; font-size: 12px; color: #6B6A78; font-weight: 600; margin-bottom: 14px; }
+.xp-sec { display: inline-block; margin: 12px 0 6px; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: #FFE08A; color: #6B4A00; }
+.xp-sec.todo { background: #D9E8FF; color: #0B4FA0; }
+.xp-item { display: flex; gap: 11px; align-items: flex-start; padding: 8px 0; border-bottom: 1.5px dashed rgba(11,79,160,.22); break-inside: avoid; }
+.xp-box { flex: none; width: 19px; height: 19px; margin-top: 1px; border: 2px solid #0B4FA0; border-radius: 6px; background: #fff; }
+.xp-t { font-size: 15px; font-weight: 700; line-height: 1.3; }
+.xp-m { font-size: 12px; color: #6B6A78; margin-top: 2px; }
+.xp-kosong { text-align: center; padding: 22px 0; color: #6B6A78; font-size: 14px; }
+.xp-foot { margin-top: 14px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 11px; color: #8A8998; }
+.xp-total { font-size: 14px; font-weight: 800; color: #0B4FA0; }
+.xp-heart { color: #E1456F; }
+@media print {
+  @page { size: A5 portrait; margin: 9mm; }
+  html.eksport-buka body > *:not(#exportSheet) { display: none !important; }
+  html.eksport-buka, html.eksport-buka body { background: #fff !important; }
+  #exportSheet { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
+  .xp-controls { display: none !important; }
+  .xp-wrap { max-width: none; }
+  .xp-paper { box-shadow: none; }
+  #exportSheet, #exportSheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* ============ collapsible section ============ */
 details.sec > summary { list-style: none; cursor: pointer; }
 details.sec > summary::-webkit-details-marker { display: none; }
@@ -1339,10 +1387,13 @@ details.tool[open] > summary::after { content: '–'; }
 
     <div class="sec">
       <div class="sec-head"><h2>Belum siap</h2><span class="note" id="nCount"></span></div>
-      <div class="range nota-filter" role="tablist" id="nFilter">
-        <button type="button" role="tab" data-nf="semua" aria-selected="true">Semua</button>
-        <button type="button" role="tab" data-nf="todo" aria-selected="false">Things to do</button>
-        <button type="button" role="tab" data-nf="beli" aria-selected="false">Nak beli</button>
+      <div class="nota-tools">
+        <div class="range nota-filter" role="tablist" id="nFilter">
+          <button type="button" role="tab" data-nf="semua" aria-selected="true">Semua</button>
+          <button type="button" role="tab" data-nf="todo" aria-selected="false">Things to do</button>
+          <button type="button" role="tab" data-nf="beli" aria-selected="false">Nak beli</button>
+        </div>
+        <button type="button" class="btn" id="nEksport">Eksport / kongsi</button>
       </div>
       <div id="nList"></div>
     </div>
@@ -1354,6 +1405,34 @@ details.tool[open] > summary::after { content: '–'; }
   </section>
 
   <p class="kaki">Jom urus kewangan <u>bersama</u>!</p>
+</div>
+
+<div id="exportSheet" hidden>
+  <div class="xp-wrap">
+    <div class="xp-controls card">
+      <div class="grid2">
+        <div class="f">
+          <label for="xScope">Apa nak dieksport</label>
+          <select id="xScope">
+            <option value="beli">Nak beli barang</option>
+            <option value="todo">Things to do</option>
+            <option value="semua">Kedua-duanya</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="xHarga">Harga anggaran</label>
+          <label class="xp-check"><input type="checkbox" id="xHarga" checked> Tunjuk harga</label>
+        </div>
+      </div>
+      <div class="form-act" style="flex-wrap:wrap">
+        <button type="button" class="btn pri" id="xCetak">Simpan PDF</button>
+        <button type="button" class="btn" id="xKongsi">Kongsi teks</button>
+        <button type="button" class="btn ghost" id="xTutup">Tutup</button>
+      </div>
+      <span class="hint">Untuk PDF: tekan <b>Simpan PDF</b>, kemudian pilih <b>Save as PDF</b> pada dialog cetak. Lepas tu boleh hantar melalui WhatsApp. Yang dah siap tak dimasukkan.</span>
+    </div>
+    <div class="xp-paper" id="xPaper"></div>
+  </div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -1798,7 +1877,7 @@ details.tool[open] > summary::after { content: '–'; }
       }
       meta += '<span>' + tarikhCantik(n.tarikh) + (n.masa ? ', ' + esc(n.masa) : '') + chip + '</span>';
     }
-    if (!todo && Number(n.anggaran) > 0) meta += '<span>anggaran ' + rm(n.anggaran, false) + '</span>';
+    if (!todo && Number(n.anggaran) > 0) meta += '<span>anggaran ' + rm(n.anggaran) + '</span>';
     if (siapMod && n.tarikhSiap) meta += '<span>siap ' + tarikhCantik(n.tarikhSiap) + '</span>';
     if (n.nota) meta += '<span>' + esc(n.nota) + '</span>';
     return '<div class="nrow' + (siapMod ? ' siap' : '') + '">'
@@ -1825,7 +1904,7 @@ details.tool[open] > summary::after { content: '–'; }
     });
     const jumBeli = belum.filter(function (n) { return n.jenisNota === 'beli'; })
       .reduce(function (a, n) { return a + (Number(n.anggaran) || 0); }, 0);
-    $('nCount').textContent = belum.length ? (belum.length + ' item' + (jumBeli > 0 ? ' · anggaran beli ' + rm(jumBeli, false) : '')) : '';
+    $('nCount').textContent = belum.length ? (belum.length + ' item' + (jumBeli > 0 ? ' · anggaran beli ' + rm(jumBeli) : '')) : '';
     $('nList').innerHTML = belum.length
       ? '<div class="card">' + belum.map(function (n) { return barisNota(n, false); }).join('') + '</div>'
       : '<div class="kosong">Tiada nota belum siap. Tambah di atas.</div>';
@@ -1833,6 +1912,103 @@ details.tool[open] > summary::after { content: '–'; }
     $('nSiapList').innerHTML = siap.length
       ? '<div class="card">' + siap.map(function (n) { return barisNota(n, true); }).join('') + '</div>'
       : '<div class="kosong">Belum ada yang siap.</div>';
+  }
+
+  /* ============ eksport nota: kertas comel (cetak/Save as PDF) + kongsi teks ============ */
+  let teksEksport = '';
+  function tarikhPenuh(iso) {
+    const p = String(iso || '').split('-');
+    return p.length < 3 ? '' : (Number(p[2]) + ' ' + BULAN[Number(p[1]) - 1] + ' ' + p[0]);
+  }
+  function dataEksport() {
+    const skop = $('xScope').value;
+    const belum = notaSemua().filter(function (n) { return !n.siap; });
+    const beli = belum.filter(function (n) { return n.jenisNota === 'beli'; });
+    const todo = belum.filter(function (n) { return n.jenisNota !== 'beli'; })
+      .sort(function (a, b) { return ((a.tarikh || '9999') + (a.masa || '')).localeCompare((b.tarikh || '9999') + (b.masa || '')); });
+    return { skop: skop, beli: skop === 'todo' ? [] : beli, todo: skop === 'beli' ? [] : todo };
+  }
+  function renderEksport() {
+    const d = dataEksport(), harga = $('xHarga').checked;
+    const tajuk = d.skop === 'beli' ? 'Senarai Nak Beli' : (d.skop === 'todo' ? 'Things to Do' : 'Nota & Senarai');
+    const sub = tarikhPenuh(isoHariIni()) + (akaunPilih === 'Saya' ? '' : ' · ' + akaunPilih);
+    const jumBeli = d.beli.reduce(function (a, n) { return a + (Number(n.anggaran) || 0); }, 0);
+    let teks = (d.skop === 'beli' ? '🛒 ' : '📝 ') + tajuk + ' — ' + sub + '\n';
+    let html = '<div class="xp-title">' + esc(tajuk) + '</div><div class="xp-sub">' + esc(sub) + '</div>';
+
+    function bahagian(label, kelas, senarai, ciri) {
+      if (!senarai.length) return;
+      html += '<div class="xp-sec ' + kelas + '">' + label + '</div>';
+      teks += '\n' + label + '\n';
+      senarai.forEach(function (n) {
+        const meta = ciri(n);
+        html += '<div class="xp-item"><span class="xp-box"></span><div><div class="xp-t">' + esc(n.tajuk) + '</div>'
+          + (meta.length ? '<div class="xp-m">' + meta.map(esc).join(' · ') + '</div>' : '') + '</div></div>';
+        teks += '☐ ' + n.tajuk + (meta.length ? ' (' + meta.join(', ') + ')' : '') + '\n';
+      });
+    }
+    bahagian('Nak beli', 'beli', d.beli, function (n) {
+      const m = [];
+      if (harga && Number(n.anggaran) > 0) m.push(rm(n.anggaran));
+      if (n.nota) m.push(n.nota);
+      return m;
+    });
+    bahagian('Things to do', 'todo', d.todo, function (n) {
+      const m = [];
+      if (n.tarikh) m.push(tarikhCantik(n.tarikh) + (n.masa ? ', ' + n.masa : ''));
+      if (n.nota) m.push(n.nota);
+      return m;
+    });
+
+    if (!d.beli.length && !d.todo.length) {
+      html += '<div class="xp-kosong">Tiada item belum siap untuk dieksport.</div>';
+      teks = '';
+    } else {
+      const total = (harga && jumBeli > 0) ? ('Anggaran: ' + rm(jumBeli)) : '';
+      html += '<div class="xp-foot"><span>Duit Tracker Pro <span class="xp-heart">&#9829;</span></span>'
+        + (total ? '<span class="xp-total">' + esc(total) + '</span>' : '') + '</div>';
+      if (total) teks += '\n' + total + '\n';
+      teks += '\n— Duit Tracker Pro';
+    }
+    $('xPaper').innerHTML = html;
+    teksEksport = teks;
+  }
+  function bukaEksport() {
+    const belum = notaSemua().filter(function (n) { return !n.siap; });
+    const adaBeli = belum.some(function (n) { return n.jenisNota === 'beli'; });
+    const adaTodo = belum.some(function (n) { return n.jenisNota !== 'beli'; });
+    $('xScope').value = (notaFilter === 'todo' || (!adaBeli && adaTodo)) ? 'todo' : 'beli';
+    renderEksport();
+    $('exportSheet').hidden = false;
+    $('exportSheet').scrollTop = 0;
+    document.documentElement.classList.add('eksport-buka');
+  }
+  function tutupEksport() {
+    $('exportSheet').hidden = true;
+    document.documentElement.classList.remove('eksport-buka');
+  }
+  function cetakEksport() {
+    if (!teksEksport) { toast('Tiada item untuk dieksport'); return; }
+    window.print();
+  }
+  function kongsiEksport() {
+    if (!teksEksport) { toast('Tiada item untuk dikongsi'); return; }
+    if (navigator.share) {
+      navigator.share({ text: teksEksport }).catch(function () { });
+      return;
+    }
+    function fallback() {
+      const ta = document.createElement('textarea');
+      ta.value = teksEksport; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { }
+      document.body.removeChild(ta);
+      toast(ok ? 'Disalin — tampal dalam WhatsApp' : 'Tak dapat salin, guna Simpan PDF');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(teksEksport).then(function () { toast('Disalin — tampal dalam WhatsApp'); }).catch(fallback);
+    } else fallback();
   }
 
   /* ============ akaun (Saya, Suami, ...) ============ */
@@ -2868,6 +3044,12 @@ details.tool[open] > summary::after { content: '–'; }
     $('akaunSimpan').addEventListener('click', tambahAkaun);
     $('nJenis').addEventListener('change', tukarJenisNota);
     $('nSimpan').addEventListener('click', simpanNota);
+    $('nEksport').addEventListener('click', bukaEksport);
+    $('xTutup').addEventListener('click', tutupEksport);
+    $('xCetak').addEventListener('click', cetakEksport);
+    $('xKongsi').addEventListener('click', kongsiEksport);
+    $('xScope').addEventListener('change', renderEksport);
+    $('xHarga').addEventListener('change', renderEksport);
     $('nBatal').addEventListener('click', resetFormNota);
     $('pane-nota').addEventListener('click', function (ev) {
       const b = ev.target.closest ? ev.target.closest('button') : null;
