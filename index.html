@@ -252,15 +252,15 @@ input.lbl::-webkit-calendar-picker-indicator:hover { opacity: 1; }
    the bottom of the viewport, clear of the home-indicator safe area. */
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--navy);
   border-top: 1px solid rgba(255,255,255,.08);
   box-shadow: 0 -6px 22px -12px rgba(0,0,0,.45);
   padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
 }
 .tabs button {
-  border: 0; background: none; cursor: pointer; padding: 7px 4px 6px;
-  border-radius: 12px; font-family: var(--f-body); font-size: 11.5px;
+  border: 0; background: none; cursor: pointer; padding: 7px 1px 6px;
+  border-radius: 12px; font-family: var(--f-body); font-size: 10.5px;
   font-weight: 700; color: rgba(255,255,255,.68);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   transition: background .14s, color .14s;
@@ -452,6 +452,24 @@ h2 {
 .akaun-panel { margin-top: 10px; padding: 14px; }
 .akaun-panel .row2 { display: flex; gap: 8px; }
 .akaun-panel .row2 input { flex: 1; min-width: 0; }
+
+/* ============ nota / checklist ============ */
+.nota-filter { margin: 4px 0 12px; }
+.nrow { display: flex; gap: 11px; align-items: flex-start; padding: 12px 15px; border-bottom: 1px solid var(--rule-soft); }
+.nrow:last-child { border-bottom: 0; }
+.ncheck {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ink-3);
+  background: none; cursor: pointer; display: grid; place-items: center; padding: 0; color: #fff; font-size: 13px; font-weight: 800;
+}
+.ncheck:hover { border-color: var(--good); }
+.nrow.siap .ncheck { background: var(--good); border-color: var(--good); }
+.nrow .l-main { flex: 1; min-width: 0; }
+.nrow .l-nama { font-weight: 700; font-size: 13.5px; }
+.nrow .l-meta { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+.nrow.siap .l-nama { text-decoration: line-through; color: var(--ink-3); }
+.nrow .l-acts { display: flex; gap: 6px; flex: none; }
+.ntag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac-ink); }
+.ntag.beli { background: var(--amber-bg); color: var(--amber-ink); }
 
 /* ============ collapsible section ============ */
 details.sec > summary { list-style: none; cursor: pointer; }
@@ -709,6 +727,10 @@ details.tool[open] > summary::after { content: '–'; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/><circle cx="19" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg>
       Analisa
     </button>
+    <button type="button" role="tab" id="tab-nota" aria-selected="false" data-tab="nota">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 9l1.6 1.6L12.5 7.5M8 15l1.6 1.6 2.9-3.1M15 9h2M15 15h2"/></svg>
+      Nota
+    </button>
   </div>
 
   <div id="banner"></div>
@@ -902,8 +924,9 @@ details.tool[open] > summary::after { content: '–'; }
         </div>
         <div class="grid3">
           <div class="f">
-            <label for="hBaki">Baki semasa (RM)</label>
+            <label for="hBaki" id="hBakiLbl">Baki semasa (RM)</label>
             <input id="hBaki" type="text" inputmode="decimal" placeholder="0.00">
+            <span class="hint" id="hBakiHint" hidden>Kosongkan untuk bil berulang tanpa baki (Coway, insurans...)</span>
           </div>
           <div class="f" id="hAnsuranF">
             <label for="hAnsuran">Ansuran sebulan (RM)</label>
@@ -1272,6 +1295,64 @@ details.tool[open] > summary::after { content: '–'; }
     </div>
   </section>
 
+  <!-- ================= NOTA ================= -->
+  <section id="pane-nota" hidden>
+    <div class="card form">
+      <div class="sec-head" style="margin:0;padding-bottom:0;border:0"><h2 id="nFormTitle">Tambah nota</h2></div>
+      <div class="grid2">
+        <div class="f">
+          <label for="nJenis">Jenis</label>
+          <select id="nJenis">
+            <option value="todo">Things to do</option>
+            <option value="beli">Nak beli barang</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="nTajuk">Tajuk</label>
+          <input id="nTajuk" type="text" maxlength="80" placeholder="cth. Bayar cukai tanah" autocomplete="off">
+        </div>
+      </div>
+      <div class="grid2" id="nTodoF">
+        <div class="f">
+          <label for="nTarikh">Nak settle bila</label>
+          <input id="nTarikh" type="date">
+        </div>
+        <div class="f">
+          <label for="nMasa">Masa <span class="muted">— pilihan</span></label>
+          <input id="nMasa" type="time">
+        </div>
+      </div>
+      <div class="f" id="nBeliF" hidden>
+        <label for="nAnggaran">Anggaran harga (RM) <span class="muted">— pilihan</span></label>
+        <input id="nAnggaran" type="text" inputmode="decimal" placeholder="0.00">
+      </div>
+      <div class="f">
+        <label for="nNota">Catatan <span class="muted">— pilihan</span></label>
+        <input id="nNota" type="text" autocomplete="off">
+      </div>
+      <div class="form-act">
+        <button type="button" class="btn pri" id="nSimpan">Simpan nota</button>
+        <button type="button" class="btn ghost" id="nBatal" hidden>Batal</button>
+        <span class="msg" id="nMsg"></span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Belum siap</h2><span class="note" id="nCount"></span></div>
+      <div class="range nota-filter" role="tablist" id="nFilter">
+        <button type="button" role="tab" data-nf="semua" aria-selected="true">Semua</button>
+        <button type="button" role="tab" data-nf="todo" aria-selected="false">Things to do</button>
+        <button type="button" role="tab" data-nf="beli" aria-selected="false">Nak beli</button>
+      </div>
+      <div id="nList"></div>
+    </div>
+
+    <details class="sec" id="nSiapSec">
+      <summary class="sec-head"><h2>Dah siap (history)</h2><span class="note" id="nSiapCount"></span></summary>
+      <div id="nSiapList"></div>
+    </details>
+  </section>
+
   <p class="kaki">Jom urus kewangan <u>bersama</u>!</p>
 </div>
 
@@ -1566,7 +1647,7 @@ details.tool[open] > summary::after { content: '–'; }
         const asal = Number(h.asal) || 0;
         const bakiH = Number(h.baki) || 0;
         let progres = '';
-        if (asal > bakiH && asal > 0) {
+        if (!h.tanpaBaki && asal > bakiH && asal > 0) {
           const pct = Math.max(0, Math.min(100, Math.round((1 - bakiH / asal) * 100)));
           progres = '<div class="bar-thin" title="' + pct + '% dijelaskan"><i style="width:' + pct + '%"></i></div>';
         }
@@ -1575,7 +1656,7 @@ details.tool[open] > summary::after { content: '–'; }
           + '<div><div class="r-nama">' + esc(h.nama) + '</div>'
           + '<div class="r-meta"><span>' + esc(h.kategori || '') + '</span>'
           + '<span class="chip calm tiny">' + esc(h.kaedah || '') + '</span>'
-          + '<span>baki ' + rm(bakiH, false) + '</span></div>' + progres + '</div>'
+          + (h.tanpaBaki ? '<span>bil berulang</span>' : '<span>baki ' + rm(bakiH, false) + '</span>') + '</div>' + progres + '</div>'
           + '<div class="r-right"><span class="r-amt">' + rm(h.ansuran, false) + '</span>'
           + '<span class="chip ' + st.kod + '">' + esc(st.teks) + '</span>'
           + (st.kod !== 'paid' && BOLEH_TULIS && !guna_contoh
@@ -1633,6 +1714,125 @@ details.tool[open] > summary::after { content: '–'; }
         + '<div style="text-align:right"><div class="l-amt">' + rm(x.jumlah, false) + '</div>'
         + '<div class="l-meta">' + pct + '%</div></div></div>';
     }).join('') + '</div>';
+  }
+
+  /* ============ nota / checklist ============ */
+  let editNotaId = null;
+  let notaFilter = 'semua';
+  function notaSemua() {
+    return rekod.filter(function (r) { return r.jenis === 'nota' && padanAkaun(r); });
+  }
+  function tukarJenisNota() {
+    const todo = $('nJenis').value === 'todo';
+    $('nTodoF').hidden = !todo;
+    $('nBeliF').hidden = todo;
+  }
+  function resetFormNota() {
+    editNotaId = null;
+    ['nTajuk', 'nTarikh', 'nMasa', 'nAnggaran', 'nNota'].forEach(function (k) { $(k).value = ''; });
+    $('nJenis').value = 'todo';
+    tukarJenisNota();
+    $('nFormTitle').textContent = 'Tambah nota';
+    $('nSimpan').textContent = 'Simpan nota';
+    $('nBatal').hidden = true;
+  }
+  async function simpanNota() {
+    const msg = $('nMsg');
+    const tajuk = $('nTajuk').value.trim();
+    const jn = $('nJenis').value;
+    if (!tajuk) return tetapMsg(msg, 'Isi tajuk.', 'bad');
+    if (jn === 'todo' && !$('nTarikh').value) return tetapMsg(msg, 'Pilih bila nak settle.', 'bad');
+    const lama = editNotaId ? notaSemua().find(function (x) { return x.id === editNotaId; }) : null;
+    const body = {
+      jenis: 'nota', akaun: akaunPilih, jenisNota: jn, tajuk: tajuk,
+      tarikh: jn === 'todo' ? $('nTarikh').value : '', masa: jn === 'todo' ? $('nMasa').value : '',
+      anggaran: jn === 'beli' ? angka($('nAnggaran').value) : 0,
+      nota: $('nNota').value.trim(),
+      siap: lama ? !!lama.siap : false, tarikhSiap: lama ? (lama.tarikhSiap || '') : '',
+      dicipta: lama ? (lama.dicipta || Date.now()) : Date.now(), dikemas: Date.now()
+    };
+    const btn = $('nSimpan');
+    btn.disabled = true;
+    try {
+      await simpanDoc(editNotaId || idBaru('n'), body);
+      toast(editNotaId ? 'Nota dikemas kini' : 'Nota disimpan');
+      resetFormNota();
+    } catch (e) {
+      tetapMsg(msg, pesanRalat(e), 'bad');
+    }
+    btn.disabled = false;
+  }
+  function mulaEditNota(id) {
+    const n = notaSemua().find(function (x) { return x.id === id; });
+    if (!n) return;
+    editNotaId = id;
+    $('nJenis').value = n.jenisNota || 'todo';
+    tukarJenisNota();
+    $('nTajuk').value = n.tajuk || '';
+    $('nTarikh').value = n.tarikh || '';
+    $('nMasa').value = n.masa || '';
+    $('nAnggaran').value = Number(n.anggaran) ? Number(n.anggaran).toFixed(2) : '';
+    $('nNota').value = n.nota || '';
+    $('nFormTitle').textContent = 'Edit nota';
+    $('nSimpan').textContent = 'Simpan perubahan';
+    $('nBatal').hidden = false;
+    $('nTajuk').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  async function togolSiap(id, siap) {
+    try {
+      await kemasDoc(id, { siap: siap, tarikhSiap: siap ? isoHariIni() : '', dikemas: Date.now() });
+      toast(siap ? 'Ditanda siap' : 'Dibuka semula');
+    } catch (e) { toast(pesanRalat(e)); }
+  }
+  function barisNota(n, siapMod) {
+    const sedia = padam_sedia['n' + n.id];
+    const todo = n.jenisNota !== 'beli';
+    const hariIni = isoHariIni();
+    let meta = '<span class="ntag' + (todo ? '' : ' beli') + '">' + (todo ? 'Things to do' : 'Nak beli') + '</span>';
+    if (todo && n.tarikh) {
+      let chip = '';
+      if (!siapMod) {
+        if (n.tarikh < hariIni) chip = ' <span class="chip late tiny">Lewat</span>';
+        else if (n.tarikh === hariIni) chip = ' <span class="chip soon tiny">Hari ini</span>';
+      }
+      meta += '<span>' + tarikhCantik(n.tarikh) + (n.masa ? ', ' + esc(n.masa) : '') + chip + '</span>';
+    }
+    if (!todo && Number(n.anggaran) > 0) meta += '<span>anggaran ' + rm(n.anggaran, false) + '</span>';
+    if (siapMod && n.tarikhSiap) meta += '<span>siap ' + tarikhCantik(n.tarikhSiap) + '</span>';
+    if (n.nota) meta += '<span>' + esc(n.nota) + '</span>';
+    return '<div class="nrow' + (siapMod ? ' siap' : '') + '">'
+      + '<button type="button" class="ncheck" data-nsiap="' + n.id + '" data-nval="' + (siapMod ? '0' : '1') + '" aria-label="' + (siapMod ? 'Buka semula' : 'Tanda siap') + '">' + (siapMod ? '&#10003;' : '') + '</button>'
+      + '<div class="l-main"><div class="l-nama">' + esc(n.tajuk) + '</div><div class="l-meta">' + meta + '</div></div>'
+      + '<div class="l-acts">' + (sedia
+          ? '<button type="button" class="btn danger" data-padam-ya="n' + n.id + '">Padam?</button><button type="button" class="btn ghost" data-padam-tak="n' + n.id + '">Tak</button>'
+          : (siapMod ? '' : '<button type="button" class="btn ghost" data-nedit="' + n.id + '">Edit</button>')
+            + '<button type="button" class="btn ghost" data-padam="n' + n.id + '">&#10005;</button>') + '</div></div>';
+  }
+  function renderNota() {
+    const semua = notaSemua();
+    const belum = semua.filter(function (n) { return !n.siap; })
+      .filter(function (n) { return notaFilter === 'semua' || (n.jenisNota || 'todo') === notaFilter; })
+      .sort(function (a, b) {
+        const ta = (a.jenisNota === 'beli') ? 1 : 0, tb = (b.jenisNota === 'beli') ? 1 : 0;
+        if (ta !== tb) return ta - tb;
+        return ((a.tarikh || '9999') + (a.masa || '')).localeCompare((b.tarikh || '9999') + (b.masa || ''));
+      });
+    const siap = semua.filter(function (n) { return n.siap; })
+      .sort(function (a, b) { return (b.tarikhSiap || '').localeCompare(a.tarikhSiap || ''); });
+    document.querySelectorAll('[data-nf]').forEach(function (b) {
+      b.setAttribute('aria-selected', String(b.getAttribute('data-nf') === notaFilter));
+    });
+    const jumBeli = belum.filter(function (n) { return n.jenisNota === 'beli'; })
+      .reduce(function (a, n) { return a + (Number(n.anggaran) || 0); }, 0);
+    $('nCount').textContent = belum.length ? (belum.length + ' item' + (jumBeli > 0 ? ' · anggaran beli ' + rm(jumBeli, false) : '')) : '';
+    $('nList').innerHTML = belum.length
+      ? '<div class="card">' + belum.map(function (n) { return barisNota(n, false); }).join('') + '</div>'
+      : '<div class="kosong">Tiada nota belum siap. Tambah di atas.</div>';
+    $('nSiapCount').textContent = siap.length ? (siap.length + ' item') : '';
+    $('nSiapList').innerHTML = siap.length
+      ? '<div class="card">' + siap.map(function (n) { return barisNota(n, true); }).join('') + '</div>'
+      : '<div class="kosong">Belum ada yang siap.</div>';
   }
 
   /* ============ akaun (Saya, Suami, ...) ============ */
@@ -1876,7 +2076,7 @@ details.tool[open] > summary::after { content: '–'; }
       return '<div class="prow">'
         + '<div><div class="p-nama">' + esc(h.nama) + '</div>'
         + '<div class="p-meta">' + esc(h.kategori || '') + ' · dibayar ' + x.bulanBayar + ' / ' + n + ' bulan'
-        + ' · baki ' + rm(h.baki, false) + '</div></div>'
+        + (h.tanpaBaki ? ' · bil berulang' : (' · baki ' + rm(h.baki, false))) + '</div></div>'
         + '<div class="p-chip">' + chip + '</div>'
         + '<div><div class="p-amt">' + rm(x.bayar, false) + '</div>'
         + '<div class="p-sub">jadual ' + rm(x.sepatut, false) + '</div></div>'
@@ -2085,8 +2285,9 @@ details.tool[open] > summary::after { content: '–'; }
         return '<div class="lrow' + (sedia ? ' confirming' : '') + '">'
           + '<div class="l-main"><div class="l-nama">' + esc(h.nama) + '</div>'
           + '<div class="l-meta">' + meta + '</div></div>'
-          + '<div style="text-align:right"><div class="l-amt">' + rm(h.baki, false) + '</div>'
-          + '<div class="l-meta">' + jumMeta + '</div></div>'
+          + (h.tanpaBaki
+              ? '<div style="text-align:right"><div class="l-amt">' + rm(h.ansuran, false) + '</div><div class="l-meta">sebulan · tiada baki</div></div>'
+              : '<div style="text-align:right"><div class="l-amt">' + rm(h.baki, false) + '</div><div class="l-meta">' + jumMeta + '</div></div>')
           + '<div class="l-acts">'
           + (sedia
               ? '<button type="button" class="btn danger" data-padam-ya="h' + h.id + '">Padam betul?</button>'
@@ -2165,7 +2366,7 @@ details.tool[open] > summary::after { content: '–'; }
     const h = hutangSemua().find(function (x) { return x.id === id; });
     if (!h) { $('bHint').innerHTML = '&nbsp;'; return; }
     const dah = bayarUntukHutang(h.id, bulan);
-    $('bHint').textContent = 'Ansuran ' + rm(h.ansuran, false) + ' · baki ' + rm(h.baki, false)
+    $('bHint').textContent = 'Ansuran ' + rm(h.ansuran, false) + (h.tanpaBaki ? '' : (' · baki ' + rm(h.baki, false)))
       + (dah > 0 ? ' · dah bayar ' + rm(dah, false) + ' bulan ini' : '');
     if (!$('bJumlah').value) $('bJumlah').value = (Number(h.ansuran) || 0).toFixed(2);
   }
@@ -2194,6 +2395,7 @@ details.tool[open] > summary::after { content: '–'; }
     renderDash();
     renderEntry();
     if (!$('pane-analisa').hidden) renderAnalisa();
+    renderNota();
     kiraSesiHint();
   }
 
@@ -2270,6 +2472,8 @@ details.tool[open] > summary::after { content: '–'; }
     $('hHariF').hidden = sasaran;
     $('hSasaranF').hidden = !sasaran;
     $('hCadanganF').hidden = !sasaran;
+    $('hBakiLbl').textContent = sasaran ? 'Baki semasa (RM)' : 'Baki semasa (RM) — pilihan';
+    $('hBakiHint').hidden = sasaran;
     if (sasaran) kemaskiniCadangan();
   }
   function kemaskiniCadangan() {
@@ -2285,7 +2489,7 @@ details.tool[open] > summary::after { content: '–'; }
     const msg = $('hMsg');
 
     if (!nama) return tetapMsg(msg, 'Isi nama hutang.', 'bad');
-    if (baki <= 0) return tetapMsg(msg, 'Isi baki semasa.', 'bad');
+    if (baki <= 0 && !tetap) return tetapMsg(msg, 'Isi baki semasa.', 'bad');
 
     let ansuran = 0, hari = null, sasaran = '';
     if (tetap) {
@@ -2302,7 +2506,7 @@ details.tool[open] > summary::after { content: '–'; }
     btn.disabled = true;
     const body = {
       jenis: 'hutang', akaun: akaunPilih, nama: nama, kategori: $('hKategori').value,
-      baki: baki, asal: angka($('hAsal').value),
+      baki: baki, tanpaBaki: (tetap && baki <= 0), asal: angka($('hAsal').value),
       tetap: tetap, ansuran: ansuran, hariDue: hari, sasaran: sasaran,
       kaedah: $('hKaedah').value, nota: $('hNota').value.trim(),
       dikemas: Date.now()
@@ -2333,7 +2537,7 @@ details.tool[open] > summary::after { content: '–'; }
     editHutangId = id;
     $('hNama').value = h.nama || '';
     $('hKategori').value = h.kategori || 'Lain-lain';
-    $('hBaki').value = (Number(h.baki) || 0).toFixed(2);
+    $('hBaki').value = h.tanpaBaki ? '' : (Number(h.baki) || 0).toFixed(2);
     $('hJenis').value = (h.tetap === false) ? 'sasaran' : 'tetap';
     $('hAnsuran').value = (Number(h.ansuran) || 0).toFixed(2);
     $('hHari').value = h.hariDue || '';
@@ -2367,8 +2571,10 @@ details.tool[open] > summary::after { content: '–'; }
         jenis: 'bayaran', akaun: akaunPilih, hutangId: id, jumlah: jumlah, tarikh: tarikh,
         nota: hutangIdPaksa ? '' : $('bNota').value.trim(), dikemas: Date.now()
       });
-      const bakiBaru = Math.max(0, (Number(h.baki) || 0) - jumlah);
-      await kemasDoc(id, { baki: bakiBaru });
+      if (!h.tanpaBaki) {
+        const bakiBaru = Math.max(0, (Number(h.baki) || 0) - jumlah);
+        await kemasDoc(id, { baki: bakiBaru });
+      }
       toast('Bayaran ' + rm(jumlah, false) + ' direkod');
       if (!hutangIdPaksa) { $('bJumlah').value = ''; $('bNota').value = ''; }
     } catch (e) {
@@ -2433,7 +2639,7 @@ details.tool[open] > summary::after { content: '–'; }
 
   /* ============ tabs ============ */
   function tukarTab(nama) {
-    ['dash', 'entry', 'calc', 'analisa'].forEach(function (t) {
+    ['dash', 'entry', 'calc', 'analisa', 'nota'].forEach(function (t) {
       $('tab-' + t).setAttribute('aria-selected', String(t === nama));
       $('pane-' + t).hidden = (t !== nama);
     });
@@ -2441,6 +2647,7 @@ details.tool[open] > summary::after { content: '–'; }
     $('akaunBar').hidden = (nama === 'calc');
     if (nama === 'calc') $('akaunForm').hidden = true;
     if (nama === 'analisa') renderAnalisa();
+    if (nama === 'nota') renderNota();
   }
   function tukarSub(nama) {
     ['hutang', 'bayaran', 'masuk', 'spend'].forEach(function (s) {
@@ -2659,6 +2866,19 @@ details.tool[open] > summary::after { content: '–'; }
       if (!p.hidden) $('akaunNama').focus();
     });
     $('akaunSimpan').addEventListener('click', tambahAkaun);
+    $('nJenis').addEventListener('change', tukarJenisNota);
+    $('nSimpan').addEventListener('click', simpanNota);
+    $('nBatal').addEventListener('click', resetFormNota);
+    $('pane-nota').addEventListener('click', function (ev) {
+      const b = ev.target.closest ? ev.target.closest('button') : null;
+      if (!b) return;
+      const nf = b.getAttribute('data-nf');
+      if (nf) { notaFilter = nf; renderNota(); return; }
+      const ns = b.getAttribute('data-nsiap');
+      if (ns) { togolSiap(ns, b.getAttribute('data-nval') === '1'); return; }
+      const ne = b.getAttribute('data-nedit');
+      if (ne) mulaEditNota(ne);
+    });
     $('akaunPadam').addEventListener('click', padamAkaun);
     $('hJenis').addEventListener('change', tukarJenisHutang);
     $('hBaki').addEventListener('input', kemaskiniCadangan);
@@ -2700,9 +2920,9 @@ details.tool[open] > summary::after { content: '–'; }
       if (edit) { mulaEditHutang(edit); return; }
 
       const minta = t.getAttribute('data-padam');
-      if (minta) { padam_sedia[minta] = true; renderEntry(); return; }
+      if (minta) { padam_sedia[minta] = true; renderEntry(); renderNota(); return; }
       const tak = t.getAttribute('data-padam-tak');
-      if (tak) { delete padam_sedia[tak]; renderEntry(); return; }
+      if (tak) { delete padam_sedia[tak]; renderEntry(); renderNota(); return; }
       const ya = t.getAttribute('data-padam-ya');
       if (ya) {
         delete padam_sedia[ya];
@@ -2758,6 +2978,7 @@ details.tool[open] > summary::after { content: '–'; }
     $('bTarikh').value = hariIni;
     $('mTarikh').value = hariIni;
     $('sTarikh').value = hariIni;
+    $('nTarikh').value = '';
     $('blnInput').value = bulan;
     const jSimpan = bacaLokal('duit.julat');
     if (['satu', '3', '6', '12'].indexOf(jSimpan) > -1) julat = jSimpan;
@@ -2770,7 +2991,7 @@ details.tool[open] > summary::after { content: '–'; }
     kiraSesi();
 
     const tabSimpan = bacaLokal('duit.tab');
-    tukarTab(['dash', 'entry', 'calc'].indexOf(tabSimpan) > -1 ? tabSimpan : 'dash');
+    tukarTab(['dash', 'entry', 'calc', 'analisa', 'nota'].indexOf(tabSimpan) > -1 ? tabSimpan : 'dash');
     const subSimpan = bacaLokal('duit.sub');
     tukarSub(['hutang', 'bayaran', 'masuk', 'spend'].indexOf(subSimpan) > -1 ? subSimpan : 'hutang');
 
